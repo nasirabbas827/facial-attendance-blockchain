@@ -9,7 +9,7 @@ from django.test.client import Client
 
 class InfoTest(TestCase):
 
-    def create_user(self, username='testuser', password='project123'):
+    def create_user(self, username='testuser', password="YOUR_OWN_API_KEY"):
         self.client = Client()
         return User.objects.create(username=username, password=password)
 
@@ -85,20 +85,20 @@ class InfoTest(TestCase):
         self.user = User.objects.create_user('test_user', 'test@test.com', 'test_password')
 
     def test_index_admin(self):
-        self.client.login(username='test_user', password='test_password')
+        self.client.login(username='test_user', password="YOUR_OWN_API_KEY")
         response = self.client.get(reverse('index'))
         self.assertContains(response, "you have been logged out")
         self.assertEqual(response.status_code, 200)
 
     def test_index_student(self):
-        self.client.login(username='test_user', password='test_password')
+        self.client.login(username='test_user', password="YOUR_OWN_API_KEY")
         s = Student.objects.create(user=User.objects.first(), USN='test', name='test_name')
         response = self.client.get(reverse('index'))
         self.assertContains(response, s.name)
         self.assertEqual(response.status_code, 200)
 
     def test_index_teacher(self):
-        self.client.login(username='test_user', password='test_password')
+        self.client.login(username='test_user', password="YOUR_OWN_API_KEY")
         s = Teacher.objects.create(user=User.objects.first(), id='test', name='test_name')
         response = self.client.get(reverse('index'))
         self.assertContains(response, s.name)
@@ -106,14 +106,14 @@ class InfoTest(TestCase):
 
     def test_no_attendance(self):
         s = self.create_student()
-        self.client.login(username='test_user', password='test_password')
+        self.client.login(username='test_user', password="YOUR_OWN_API_KEY")
         response = self.client.get(reverse('attendance', args=(s.USN,)))
         self.assertContains(response, "student has no courses")
         self.assertEqual(response.status_code, 200)
 
     def test_attendance_view(self):
         s = self.create_student()
-        self.client.login(username='test_user', password='test_password')
+        self.client.login(username='test_user', password="YOUR_OWN_API_KEY")
         Assign.objects.create(class_id=s.class_id, course=self.create_course(), teacher=self.create_teacher())
         response = self.client.get(reverse('attendance', args=(s.USN,)))
         self.assertEqual(response.status_code, 200)
@@ -122,7 +122,7 @@ class InfoTest(TestCase):
     def test_no_attendance__detail(self):
         s = self.create_student()
         cr = self.create_course()
-        self.client.login(username='test_user', password='test_password')
+        self.client.login(username='test_user', password="YOUR_OWN_API_KEY")
         resp = self.client.get(reverse('attendance_detail', args=(s.USN, cr.id)))
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "student has no attendance")
@@ -131,7 +131,7 @@ class InfoTest(TestCase):
         s = self.create_student()
         cr = self.create_course()
         Attendance.objects.create(student=s, course=cr)
-        self.client.login(username='test_user', password='test_password')
+        self.client.login(username='test_user', password="YOUR_OWN_API_KEY")
         resp = self.client.get(reverse('attendance_detail', args=(s.USN, cr.id)))
         self.assertEqual(resp.status_code, 200)
         self.assertQuerysetEqual(resp.context['att_list'], ['<Attendance: ' + s.name + ' : ' + cr.shortname + '>'])
@@ -141,7 +141,7 @@ class InfoTest(TestCase):
     # def test_attendance_class(self):
     #     t = self.create_teacher()
     #     Assign.objects.create(teacher=t, class_id=self.create_class(), course=self.create_course())
-    #     self.client.login(username='test_user', password='test_password')
+    #     self.client.login(username='test_user', password="YOUR_OWN_API_KEY")
     #     resp = self.client.get(reverse('t_clas', args=(t.id, 1)))
     #     print(resp.content)
     #     self.assertEqual(resp.status_code, 200)
@@ -149,14 +149,14 @@ class InfoTest(TestCase):
 
     # def test_attendance_class(self):
     #     t = self.create_teacher()
-    #     self.client.login(username='test_user', password='test_password')
+    #     self.client.login(username='test_user', password="YOUR_OWN_API_KEY")
     #     resp = self.client.get(reverse('t_clas', args=(t.id, 1)))
     #     self.assertEqual(resp.status_code, 200)
     #     self.assertContains(resp, "Enter Attendance")
     #
     # def test_attendance_class(self):
     #     t = self.create_teacher()
-    #     self.client.login(username='test_user', password='test_password')
+    #     self.client.login(username='test_user', password="YOUR_OWN_API_KEY")
     #     resp = self.client.get(reverse('t_clas', args=(t.id, 1)))
     #     self.assertEqual(resp.status_code, 200)
     #     self.assertContains(resp, "Enter Attendance")
