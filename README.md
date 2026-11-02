@@ -1,86 +1,87 @@
-# facial_attendance_blockchain  
+# Facial Attendance with Blockchain Records
 
-A web‑based **Facial Attendance System** that records student/teacher check‑ins on a private blockchain for tamper‑proof auditability. The front‑end is built with HTML/CSS (Bootstrap) and the back‑end runs on Django.
+A Django attendance system that recognises faces with OpenCV and `face_recognition`, and records each recognised check-in in a SHA-256 hash-linked CSV log, alongside student/teacher management, marks, timetables, and dashboards.
 
----
+## What it does
 
-## Overview  
+- **Face-recognition attendance:** loads reference photos from `info/ImagesAttendance/`, encodes them with `face_recognition`, captures webcam frames with OpenCV, and matches faces in real time in the `Attendancee` view.
+- **Hash-linked attendance log:** each new check-in appends one row to `info/Attendance.csv` with Name, Time, Date, Block ID, Previous Hash, and Block Hash. The block hash is SHA-256 of the name, time, date, and block ID; the previous row's block hash is stored in the Previous Hash column.
+- **Django attendance management:** departments, courses, classes, students, teachers, assignments, timetables, class attendance, attendance totals, and marks, with a custom user model (`info.User`).
+- **Dashboards and reports:** attendance views, per-student/course attendance detail, CSV download of the attendance log, and Chart.js-based dashboard pages in the templates.
+- **Admin and extras:** Django admin (with django-jazzmin), feedback/contact and to-do views in the `info` app, and the existing test file `info/tests.py`.
 
-The application captures a face image, matches it against stored profiles, and logs the attendance event as an immutable transaction on a lightweight blockchain. Administrators can view, export, and analyse attendance data through a responsive dashboard.
+## How the face-recognition flow works
 
----
+1. Add one reference photo per person to `info/ImagesAttendance/`, named after the person (for example `Ali.jpg`).
+2. Start the face-attendance view. It builds an encoding for each reference photo.
+3. The webcam loop compares each detected face with the known encodings and, on a match, draws the name on the frame and calls `markAttendance`.
+4. `markAttendance` adds the person once per CSV file contents (it skips a name already present in `Attendance.csv`) and appends the hash-linked row described above.
 
-## Features  
+Note: the CSV log is separate from the Django database attendance records (`Attendance`, `AttendanceTotal`). The two are not automatically kept in sync.
 
-| ✅ | Feature |
-|---|---|
-| 📸 | **Real‑time facial recognition** using OpenCV / dlib (backend) |
-| ⛓️ | **Blockchain‑backed logging** – each attendance entry is stored as a signed block |
-| 👤 | **Student & Teacher profiles** with optional photo upload |
-| 📊 | **Dashboard** with charts (area, bar, pie) powered by Chart.js |
-| 📥 | **CSV export** of attendance records |
-| 🔐 | **Admin panel** (Django admin) for managing users and blockchain settings |
-| 📱 | **Responsive UI** built on the SB‑Admin Bootstrap theme |
+## Tech stack
 
----
+- Python, Django, and SQLite (development database)
+- OpenCV (`opencv-python`) and `face_recognition`
+- NumPy, Pandas, and Matplotlib
+- HTML templates with Bootstrap (SB Admin theme) and Chart.js
+- django-jazzmin for the admin interface
 
-## Tech Stack  
+## Project structure
 
-| Layer | Technology |
-|-------|------------|
-| **Front‑end** | HTML5, CSS3, Bootstrap 4 (SB‑Admin), Chart.js |
-| **Back‑end** | Python 3.11, Django 5.x |
-| **Computer Vision** | OpenCV, dlib (or face‑recognition library) |
-| **Blockchain** | Custom lightweight chain (Python objects, SHA‑256 hashing) |
-| **Database** | SQLite (development) – can be swapped for PostgreSQL/MySQL |
-| **Version Control** | Git (GitHub) |
-| **Deployment** | Any WSGI‑compatible server (Gunicorn, uWSGI) |
+```text
+manage.py               Django entry point
+AASystem/               Project settings, URLs, and WSGI config
+info/                   Main app: models, views, URLs, admin, templates, static files
+info/ImagesAttendance/  Reference face photos (add your own; do not commit real photos)
+info/Attendance.csv     Hash-linked attendance log created/updated by the face view
+requirements.txt        Python dependencies (unpinned)
+README.md               This file
+```
 
----
+## Getting started
 
-## Installation  
-
-> **Prerequisites**  
-> - Python 3.11+  
-> - Git  
-> - (Optional) virtual‑environment tool (`venv` or `conda`)  
+### 1. Clone the repository
 
 ```bash
-# 1️⃣ Clone the repo
-git clone https://github.com/yourusername/facial_attendance_blockchain.git
-cd facial_attendance_blockchain
+git clone https://github.com/nasirabbas827/facial-attendance-blockchain.git
+cd facial-attendance-blockchain
+```
 
-# 2️⃣ Create and activate a virtual environment
+### 2. Create a virtual environment and install dependencies
+
+```bash
 python -m venv .venv
-source .venv/bin/activate   # On Windows: .venv\Scripts\activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-# 3️⃣ Install Python dependencies
-pip install -r requirements.txt   # (Create this file if missing)
+`requirements.txt` lists asgiref, Django, pytz, sqlparse, matplotlib, django-jazzmin, face_recognition, pandas, and opencv-python, without pinned versions. Installing `face_recognition` (and its dlib dependency) can need system build tools; verify the install in your own environment before running the webcam view.
 
-# 4️⃣ Apply database migrations
+### 3. Apply migrations and create an admin user
+
+```bash
 python manage.py migrate
-
-# 5️⃣ Create a superuser for the admin panel
 python manage.py createsuperuser
 ```
 
-> **Note**: If `requirements.txt` is not present, install the core packages manually:
+### 4. Run the app
 
 ```bash
-pip install Django==5.0 opencv-python dlib numpy
-```
-
----
-
-## Usage  
-
-```bash
-# Start the development server
 python manage.py runserver
 ```
 
-1. Open `http://127.0.0.1:8000/` in a browser.  
-2. Log in with the superuser credentials you created.  
-3. Navigate to **Attendance** → **Register** to capture a face image.  
-4. The system will match the face, create a new block, and display the entry in the dashboard.  
-5. Use the **Export CSV** button to download the
+Then open http://127.0.0.1:8000/ in your browser. The face-attendance view needs a webcam and reference photos in `info/ImagesAttendance/`.
+
+## Notes and limitations
+
+- The existing README's claims about PostgreSQL/MySQL, deployment, and a "private blockchain" are not stated in the code checked here, so they are not repeated as facts. The database in `AASystem/settings.py` is SQLite, and the hash-linked log is a CSV file, not a distributed blockchain with consensus.
+- `AASystem/settings.py` has `DEBUG = True` and `ALLOWED_HOSTS = ['*']`, and a placeholder secret key. Change the secret key, turn debug off, and restrict allowed hosts before any shared or public deployment, and load secrets from environment variables.
+- Do not commit real face photos, student CNIC/phone data, or other personal data to a public repository. The student model includes fields such as CNIC and phone number; treat any real data accordingly.
+- A stray file, `info/tests.py___jb_tmp___`, is present in the repository; it is not part of the app code checked here.
+
+## Author
+
+Nasir Abbas — Software Developer (Python, Django & Flask, Machine Learning & Blockchain)
+
+GitHub: https://github.com/nasirabbas827
